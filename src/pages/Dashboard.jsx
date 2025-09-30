@@ -692,11 +692,11 @@ const Dashboard = () => {
       )}
 
       {/* Linha 1: KPIs - col-span-2 cada */}
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2">
-        <div className={`${cardClasses} flex flex-col justify-between min-h-[140px]`}>
+      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
+        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 truncate`}>Total de Litros</p>
+              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Total de Litros</p>
               <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatLiters(metrics.totalLitros)}</p>
             </div>
             <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-blue-500 flex items-center justify-center shadow-lg ml-2">
@@ -710,11 +710,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2">
-        <div className={`${cardClasses} flex flex-col justify-between min-h-[140px]`}>
+      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
+        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 truncate`}>Valor Total</p>
+              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Valor Total</p>
               <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatCurrency(metrics.totalValor)}</p>
             </div>
             <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-green-500 flex items-center justify-center shadow-lg ml-2">
@@ -728,11 +728,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2">
-        <div className={`${cardClasses} flex flex-col justify-between min-h-[140px]`}>
+      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
+        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 truncate`}>Ticket Médio</p>
+              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Ticket Médio</p>
               <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatCurrency(metrics.ticketMedio)}</p>
             </div>
             <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-purple-500 flex items-center justify-center shadow-lg ml-2">
@@ -746,11 +746,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2">
-        <div className={`${cardClasses} flex flex-col justify-between min-h-[140px]`}>
+      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
+        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 truncate`}>Média KM/L</p>
+              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Média KM/L</p>
               <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatKmPerLiter(metrics.avgKmLitro)}</p>
             </div>
             <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg ml-2">
@@ -764,11 +764,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2">
-        <div className={`${cardClasses} flex flex-col justify-between min-h-[140px]`}>
+      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
+        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 truncate`}>Custo por KM</p>
+              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Custo por KM</p>
               <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatCurrency(metrics.avgCustoPorKm)}</p>
             </div>
             <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-red-500 flex items-center justify-center shadow-lg ml-2">
@@ -782,11 +782,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2">
-        <div className={`${cardClasses} flex flex-col justify-between min-h-[140px]`}>
+      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
+        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 truncate`}>Transações</p>
+              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Transações</p>
               <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{metrics.totalTransacoes}</p>
             </div>
             <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg ml-2">
