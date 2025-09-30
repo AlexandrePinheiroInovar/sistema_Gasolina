@@ -1,6 +1,9 @@
-# Sistema de Gerenciamento de Gasolina
+# 🚗 Sistema de Gerenciamento de Gasolina
 
 Um sistema web completo para gerenciamento de consumo de gasolina com dashboard interativo, controle de usuários e importação de planilhas.
+
+[![GitHub](https://img.shields.io/badge/GitHub-AlexandrePinheiroInovar-blue?logo=github)](https://github.com/AlexandrePinheiroInovar/sistema_Gasolina)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🚀 Funcionalidades
 
@@ -33,8 +36,8 @@ Um sistema web completo para gerenciamento de consumo de gasolina com dashboard 
 
 1. Clone o repositório:
 ```bash
-git clone <repository-url>
-cd sistema-gerenciamento-gasolina
+git clone https://github.com/AlexandrePinheiroInovar/sistema_Gasolina.git
+cd sistema_Gasolina
 ```
 
 2. Instale as dependências:

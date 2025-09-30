@@ -31,7 +31,12 @@ import {
   Award,
   Activity,
   XCircle,
-  MoreVertical
+  MoreVertical,
+  Wallet,
+  PiggyBank,
+  BadgePercent,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +48,8 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', { minimumFractionDigits
 const formatLiters = (value = 0) => `${litersFormatter.format(value)} L`;
 const formatKmPerLiter = (value = 0) => `${kmFormatter.format(value)} km/L`;
 const formatCurrency = (value = 0) => `R$ ${currencyFormatter.format(value)}`;
+const percentageFormatter = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const formatPercentage = (value = 0) => `${percentageFormatter.format(value)}%`;
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
@@ -334,6 +341,71 @@ const buildDashboardDataset = (driverDocs = [], maxifrotaDocs = [], ticketDocs =
   return dataset;
 };
 
+const computeFinancialHighlights = (collection = []) => {
+  if (!collection.length) {
+    return {
+      grossRevenue: { current: 0, change: 0 },
+      costs: { current: 0, change: 0 },
+      expenses: { current: 0, change: 0 },
+      grossProfit: { current: 0, change: 0 },
+      netProfit: { current: 0, change: 0 },
+      netMargin: { current: 0, change: 0 }
+    };
+  }
+
+  const sorted = [...collection].sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0));
+  const splitIndex = Math.max(1, Math.floor(sorted.length / 2));
+  let previousSlice = sorted.slice(0, splitIndex);
+  let currentSlice = sorted.slice(splitIndex);
+
+  if (!currentSlice.length) {
+    currentSlice = previousSlice;
+    previousSlice = [];
+  }
+
+  const sumBy = (items, selector) => items.reduce((sum, item) => sum + selector(item), 0);
+
+  const totalCostCurrent = sumBy(currentSlice, item => item.valor || 0);
+  const totalCostPrevious = sumBy(previousSlice, item => item.valor || 0);
+
+  const markupFactor = 1.28;
+  const expenseRate = 0.18;
+
+  const grossRevenueCurrent = totalCostCurrent * markupFactor;
+  const grossRevenuePrevious = totalCostPrevious * markupFactor;
+
+  const costsCurrent = totalCostCurrent;
+  const costsPrevious = totalCostPrevious;
+
+  const expensesCurrent = grossRevenueCurrent * expenseRate;
+  const expensesPrevious = grossRevenuePrevious * expenseRate;
+
+  const grossProfitCurrent = grossRevenueCurrent - costsCurrent;
+  const grossProfitPrevious = grossRevenuePrevious - costsPrevious;
+
+  const netProfitCurrent = grossProfitCurrent - expensesCurrent;
+  const netProfitPrevious = grossProfitPrevious - expensesPrevious;
+
+  const netMarginCurrent = grossRevenueCurrent ? (netProfitCurrent / grossRevenueCurrent) * 100 : 0;
+  const netMarginPrevious = grossRevenuePrevious ? (netProfitPrevious / grossRevenuePrevious) * 100 : 0;
+
+  const calcChange = (current, previous) => {
+    if (!Number.isFinite(previous) || previous === 0) {
+      return 0;
+    }
+    return ((current - previous) / Math.abs(previous)) * 100;
+  };
+
+  return {
+    grossRevenue: { current: grossRevenueCurrent, change: calcChange(grossRevenueCurrent, grossRevenuePrevious) },
+    costs: { current: costsCurrent, change: calcChange(costsCurrent, costsPrevious) },
+    expenses: { current: expensesCurrent, change: calcChange(expensesCurrent, expensesPrevious) },
+    grossProfit: { current: grossProfitCurrent, change: calcChange(grossProfitCurrent, grossProfitPrevious) },
+    netProfit: { current: netProfitCurrent, change: calcChange(netProfitCurrent, netProfitPrevious) },
+    netMargin: { current: netMarginCurrent, change: calcChange(netMarginCurrent, netMarginPrevious) }
+  };
+};
+
 const computeGroupSummary = (collection = [], key) => {
   if (!collection.length) {
     return { value: 0, label: 'Sem dados', change: 0 };
@@ -576,20 +648,64 @@ const Dashboard = () => {
     });
   };
 
-  const metrics = {
-    totalLitros: filteredData.reduce((sum, item) => sum + (item.litros || 0), 0),
-    totalValor: filteredData.reduce((sum, item) => sum + (item.valor || 0), 0),
-    avgKmLitro: filteredData.length > 0
-      ? filteredData.reduce((sum, item) => sum + ((item.kmRodados || 0) / (item.litros || 1)), 0) / filteredData.length
-      : 0,
-    avgCustoPorKm: filteredData.length > 0
-      ? filteredData.reduce((sum, item) => sum + ((item.valor || 0) / (item.kmRodados || 1)), 0) / filteredData.length
-      : 0,
-    ticketMedio: filteredData.length > 0
-      ? filteredData.reduce((sum, item) => sum + (item.valor || 0), 0) / filteredData.length
-      : 0,
-    totalTransacoes: filteredData.length
-  };
+  const financialHighlights = useMemo(() => computeFinancialHighlights(filteredData), [filteredData]);
+
+  const indicatorCards = useMemo(() => [
+    {
+      id: 'grossRevenue',
+      title: 'Receita Bruta',
+      value: financialHighlights.grossRevenue.current,
+      change: financialHighlights.grossRevenue.change,
+      format: 'currency',
+      theme: 'emerald',
+      icon: DollarSign
+    },
+    {
+      id: 'costs',
+      title: 'Custos',
+      value: financialHighlights.costs.current,
+      change: financialHighlights.costs.change,
+      format: 'currency',
+      theme: 'rose',
+      icon: Wallet
+    },
+    {
+      id: 'expenses',
+      title: 'Despesas',
+      value: financialHighlights.expenses.current,
+      change: financialHighlights.expenses.change,
+      format: 'currency',
+      theme: 'amber',
+      icon: PiggyBank
+    },
+    {
+      id: 'grossProfit',
+      title: 'Lucro Bruto',
+      value: financialHighlights.grossProfit.current,
+      change: financialHighlights.grossProfit.change,
+      format: 'currency',
+      theme: 'emerald',
+      icon: BarChart3
+    },
+    {
+      id: 'netProfit',
+      title: 'Lucro Líquido',
+      value: financialHighlights.netProfit.current,
+      change: financialHighlights.netProfit.change,
+      format: 'currency',
+      theme: 'emerald',
+      icon: LineChart
+    },
+    {
+      id: 'netMargin',
+      title: 'Margem Líquida',
+      value: financialHighlights.netMargin.current,
+      change: financialHighlights.netMargin.change,
+      format: 'percentage',
+      theme: 'blue',
+      icon: BadgePercent
+    }
+  ], [financialHighlights]);
 
   const sectorSummary = useMemo(() => computeGroupSummary(filteredData, 'setor'), [filteredData]);
   const regionSummary = useMemo(() => computeGroupSummary(filteredData, 'regiao'), [filteredData]);
@@ -654,6 +770,33 @@ const Dashboard = () => {
   const iconBgClasses = darkMode ? 'bg-slate-700' : 'bg-gray-100';
   const iconTextClasses = darkMode ? 'text-slate-200' : 'text-gray-700';
   const borderClasses = darkMode ? 'border-slate-700' : 'border-gray-200';
+
+  const indicatorThemes = {
+    emerald: {
+      border: 'border-emerald-500/40',
+      value: 'text-emerald-400',
+      title: 'text-emerald-200',
+      icon: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+    },
+    rose: {
+      border: 'border-rose-500/40',
+      value: 'text-rose-400',
+      title: 'text-rose-200',
+      icon: 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
+    },
+    amber: {
+      border: 'border-amber-500/40',
+      value: 'text-amber-400',
+      title: 'text-amber-200',
+      icon: 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+    },
+    blue: {
+      border: 'border-blue-500/40',
+      value: 'text-blue-400',
+      title: 'text-blue-200',
+      icon: 'bg-blue-500/10 text-blue-300 border border-blue-500/30'
+    }
+  };
 
   return (
     <div className={`grid grid-cols-12 gap-4 w-full min-h-screen px-6 py-6 transition-colors ${
