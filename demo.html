@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gerenciamento de Gasolina - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-8 w-8 bg-primary-500 rounded-lg flex items-center justify-center">
+                        <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h1 class="ml-4 text-xl font-semibold text-gray-900 dark:text-white">
+                        Sistema de Gerenciamento de Gasolina
+                    </h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleDarkMode()" class="p-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700">
+                    <svg id="moon-icon" class="h-5 w-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                    <svg id="sun-icon" class="h-5 w-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                </button>
+                <div class="flex items-center">
+                    <div class="h-8 w-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                        <svg class="h-4 w-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <span class="ml-2 text-sm font-medium text-gray-900 dark:text-white">Admin Demo</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="flex h-screen pt-16">
+        <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 pt-16">
+            <div class="flex flex-col h-full">
+                <nav class="flex-1 px-2 py-4 space-y-1">
+                    <a href="#" onclick="showPage('dashboard')" class="nav-item bg-primary-100 text-primary-900 dark:bg-primary-900/20 dark:text-primary-100 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Dashboard
+                    </a>
+                    <a href="#" onclick="showPage('drivers')" class="nav-item text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
+                        </svg>
+                        Condutores
+                    </a>
+                    <a href="#" onclick="showPage('users')" class="nav-item text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                        </svg>
+                        Usuários
+                    </a>
+                    <a href="#" onclick="showPage('import')" class="nav-item text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        Importar Dados
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 ml-64">
+            <main class="flex-1 relative overflow-y-auto focus:outline-none">
+                <div class="py-6">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+
+                        <!-- Dashboard Page -->
+                        <div id="dashboard-page" class="page-content">
+                            <div class="flex justify-between items-center mb-6">
+                                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                                <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                                    </svg>
+                                    <span>Filtros</span>
+                                </button>
+                            </div>
+
+                            <!-- Metrics Cards -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <div class="flex items-center">
+                                        <div class="p-3 rounded-lg bg-blue-500">
+                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de Litros</p>
+                                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">12,450.50L</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <div class="flex items-center">
+                                        <div class="p-3 rounded-lg bg-green-500">
+                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Valor Total Gasto</p>
+                                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">R$ 68,425.30</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <div class="flex items-center">
+                                        <div class="p-3 rounded-lg bg-purple-500">
+                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Média KM/Litro</p>
+                                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">8.5 km/L</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <div class="flex items-center">
+                                        <div class="p-3 rounded-lg bg-orange-500">
+                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Custo Médio por KM</p>
+                                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">R$ 0.65</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Charts -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Consumo por Setor</h3>
+                                    <canvas id="sectorChart" width="400" height="200"></canvas>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top 10 Condutores</h3>
+                                    <canvas id="driversChart" width="400" height="200"></canvas>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Consumo por Supervisão</h3>
+                                    <canvas id="supervisorChart" width="400" height="200"></canvas>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 fade-in">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Métricas de Eficiência</h3>
+                                    <canvas id="efficiencyChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Drivers Page -->
+                        <div id="drivers-page" class="page-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Condutores</h1>
+                                <div class="flex space-x-2">
+                                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        <span>Template</span>
+                                    </button>
+                                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                        </svg>
+                                        <span>Importar</span>
+                                    </button>
+                                    <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                        <span>Novo Condutor</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Condutor</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Veículo</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Setor/Supervisor</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <div class="text-sm font-medium text-gray-900 dark:text-white">João Silva</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-400">Mat: 12345 | joao@empresa.com</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900 dark:text-white">Toyota Corolla</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">ABC-1234 | Prata | 2020</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900 dark:text-white">Administração</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">Maria Santos</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">ativo</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div class="flex justify-end space-x-2">
+                                                    <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                        </svg>
+                                                    </button>
+                                                    <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Users Page -->
+                        <div id="users-page" class="page-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gerenciar Usuários</h1>
+                                <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    <span>Novo Usuário</span>
+                                </button>
+                            </div>
+
+                            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Usuário</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Setor/Empresa</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Perfil</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Criado em</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div>
+                                                    <div class="text-sm font-medium text-gray-900 dark:text-white">Alexandre Santos</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-400">alexandre@empresa.com</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900 dark:text-white">TI</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">Minha Empresa</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">Administrador</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">26/09/2025</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div class="flex justify-end space-x-2">
+                                                    <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                        </svg>
+                                                    </button>
+                                                    <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Import Page -->
+                        <div id="import-page" class="page-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Importar Dados</h1>
+                                    <p class="text-gray-600 dark:text-gray-400 mt-1">Importe planilhas de relatórios para análise no dashboard</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="p-3 rounded-lg bg-blue-500">
+                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Relatório - Condutor</h3>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">Dados detalhados de abastecimento por condutor</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <button class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            Baixar Template
+                                        </button>
+                                        <button class="w-full flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium transition-colors">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                            </svg>
+                                            Importar Planilha
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="p-3 rounded-lg bg-green-500">
+                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Relatório - Maxi Frota</h3>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">Transações e dados do sistema Maxi Frota</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <button class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            Baixar Template
+                                        </button>
+                                        <button class="w-full flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium transition-colors">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                            </svg>
+                                            Importar Planilha
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="p-3 rounded-lg bg-purple-500">
+                                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Relatório - Período Ticket Log</h3>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">Dados consolidados por período do Ticket Log</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <button class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            Baixar Template
+                                        </button>
+                                        <button class="w-full flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium transition-colors">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                            </svg>
+                                            Importar Planilha
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+        }
+
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.add('hidden');
+            });
+
+            // Show selected page
+            document.getElementById(pageId + '-page').classList.remove('hidden');
+
+            // Update navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('bg-primary-100', 'text-primary-900', 'dark:bg-primary-900/20', 'dark:text-primary-100');
+                item.classList.add('text-gray-600', 'hover:bg-gray-50', 'hover:text-gray-900', 'dark:text-gray-300', 'dark:hover:bg-gray-700', 'dark:hover:text-white');
+            });
+
+            event.target.classList.add('bg-primary-100', 'text-primary-900', 'dark:bg-primary-900/20', 'dark:text-primary-100');
+            event.target.classList.remove('text-gray-600', 'hover:bg-gray-50', 'hover:text-gray-900', 'dark:text-gray-300', 'dark:hover:bg-gray-700', 'dark:hover:text-white');
+        }
+
+        // Initialize dark mode from localStorage
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Initialize charts when page loads
+        window.addEventListener('load', function() {
+            // Sector Chart
+            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+            new Chart(sectorCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Administração', 'Vendas', 'Operações', 'TI', 'RH'],
+                    datasets: [{
+                        label: 'Litros Consumidos',
+                        data: [3200, 2800, 4500, 1200, 800],
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Drivers Chart
+            const driversCtx = document.getElementById('driversChart').getContext('2d');
+            new Chart(driversCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Souza'],
+                    datasets: [{
+                        label: 'Litros Consumidos',
+                        data: [450, 380, 520, 290, 340],
+                        backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Supervisor Chart
+            const supervisorCtx = document.getElementById('supervisorChart').getContext('2d');
+            new Chart(supervisorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Maria Santos', 'João Pedro', 'Ana Costa', 'Carlos Lima'],
+                    datasets: [{
+                        data: [35, 25, 20, 20],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Efficiency Chart
+            const efficiencyCtx = document.getElementById('efficiencyChart').getContext('2d');
+            new Chart(efficiencyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                    datasets: [{
+                        label: 'KM/Litro',
+                        data: [8.2, 8.5, 8.1, 8.7, 8.4, 8.6],
+                        borderColor: 'rgba(34, 197, 94, 1)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
