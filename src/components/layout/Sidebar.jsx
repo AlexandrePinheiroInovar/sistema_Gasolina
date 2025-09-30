@@ -4,7 +4,6 @@ import {
   BarChart3,
   Users,
   Car,
-  UserPlus,
   Fuel
 } from 'lucide-react';
 
@@ -88,23 +87,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               <NavItem key={item.name} item={item} />
             ))}
           </nav>
-
-          {/* User info */}
-          <div className="flex-shrink-0 p-4 border-t border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-              <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-                <UserPlus className="h-4 w-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {userProfile?.nome || 'Usuário'}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                  {userProfile?.role === 'admin' ? 'Administrador' : 'Usuário'}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </>
