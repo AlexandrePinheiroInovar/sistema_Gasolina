@@ -1,0 +1,95 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Função auxiliar para verificar se o usuário está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Função auxiliar para verificar se o usuário é admin
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Função auxiliar para verificar se é o próprio usuário
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Regras para a coleção de usuários
+    match /users/{userId} {
+      // Apenas admins podem listar todos os usuários
+      allow list: if isAdmin();
+
+      // Usuário pode ler seus próprios dados, admin pode ler todos
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Apenas admins podem criar novos usuários
+      allow create: if isAdmin();
+
+      // Usuário pode atualizar seus próprios dados (exceto role), admin pode atualizar tudo
+      allow update: if isOwner(userId) &&
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
+                      || isAdmin();
+
+      // Apenas admins podem deletar usuários
+      allow delete: if isAdmin();
+    }
+
+    // Regras para a coleção de condutores
+    match /drivers/{driverId} {
+      // Usuários autenticados podem ler
+      allow read: if isAuthenticated();
+
+      // Apenas admins podem criar, atualizar ou deletar
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Regras para relatórios de condutores
+    match /driverReports/{reportId} {
+      // Usuários autenticados podem ler
+      allow read: if isAuthenticated();
+
+      // Apenas admins podem criar, atualizar ou deletar
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Regras para relatórios Maxi Frota
+    match /maxifrotaReports/{reportId} {
+      // Usuários autenticados podem ler
+      allow read: if isAuthenticated();
+
+      // Apenas admins podem criar, atualizar ou deletar
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Regras para relatórios Ticket Log
+    match /ticketlogReports/{reportId} {
+      // Usuários autenticados podem ler
+      allow read: if isAuthenticated();
+
+      // Apenas admins podem criar, atualizar ou deletar
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Regras para histórico de importações
+    match /importHistory/{historyId} {
+      // Usuários autenticados podem ler
+      allow read: if isAuthenticated();
+
+      // Apenas admins podem criar e atualizar
+      allow create, update: if isAdmin();
+
+      // Apenas admins podem deletar
+      allow delete: if isAdmin();
+    }
+
+    // Bloquear acesso a qualquer outra coleção não especificada
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

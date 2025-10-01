@@ -4,13 +4,13 @@ import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  // Substitua estas configurações pelas suas chaves do Firebase
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id"
+  apiKey: "AIzaSyD1J4WBUHJkKwiV1UrsyIV-58fc7RzYVhk",
+  authDomain: "sistema-gestao-gasolina.firebaseapp.com",
+  projectId: "sistema-gestao-gasolina",
+  storageBucket: "sistema-gestao-gasolina.firebasestorage.app",
+  messagingSenderId: "843683965473",
+  appId: "1:843683965473:web:8d10b632038db21385d160",
+  measurementId: "G-CN9NHLZG15"
 };
 
 const app = initializeApp(firebaseConfig);

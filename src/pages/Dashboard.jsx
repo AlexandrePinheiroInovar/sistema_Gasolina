@@ -11,8 +11,8 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import {
   Filter,
-  CalendarDays,
   Fuel,
+  CalendarDays,
   DollarSign,
   TrendingUp,
   BarChart3,
@@ -29,14 +29,11 @@ import {
   Globe2,
   LineChart,
   Award,
-  Activity,
   XCircle,
   MoreVertical,
-  Wallet,
-  PiggyBank,
-  BadgePercent,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -44,12 +41,14 @@ import { useNavigate } from 'react-router-dom';
 const litersFormatter = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const kmFormatter = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const integerFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
 
 const formatLiters = (value = 0) => `${litersFormatter.format(value)} L`;
 const formatKmPerLiter = (value = 0) => `${kmFormatter.format(value)} km/L`;
 const formatCurrency = (value = 0) => `R$ ${currencyFormatter.format(value)}`;
 const percentageFormatter = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const formatPercentage = (value = 0) => `${percentageFormatter.format(value)}%`;
+const formatInteger = (value = 0) => integerFormatter.format(value);
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
@@ -341,15 +340,15 @@ const buildDashboardDataset = (driverDocs = [], maxifrotaDocs = [], ticketDocs =
   return dataset;
 };
 
-const computeFinancialHighlights = (collection = []) => {
+const computeMetricTrends = (collection = []) => {
   if (!collection.length) {
     return {
-      grossRevenue: { current: 0, change: 0 },
-      costs: { current: 0, change: 0 },
-      expenses: { current: 0, change: 0 },
-      grossProfit: { current: 0, change: 0 },
-      netProfit: { current: 0, change: 0 },
-      netMargin: { current: 0, change: 0 }
+      totalLitros: { current: 0, change: 0 },
+      totalValor: { current: 0, change: 0 },
+      ticketMedio: { current: 0, change: 0 },
+      avgKmLitro: { current: 0, change: 0 },
+      avgCustoPorKm: { current: 0, change: 0 },
+      totalTransacoes: { current: 0, change: 0 },
     };
   }
 
@@ -364,30 +363,48 @@ const computeFinancialHighlights = (collection = []) => {
   }
 
   const sumBy = (items, selector) => items.reduce((sum, item) => sum + selector(item), 0);
+  const averageBy = (items, selector) => {
+    if (!items.length) return 0;
+    const total = items.reduce((acc, item) => acc + selector(item), 0);
+    return total / items.length;
+  };
 
-  const totalCostCurrent = sumBy(currentSlice, item => item.valor || 0);
-  const totalCostPrevious = sumBy(previousSlice, item => item.valor || 0);
+  const computeKmLitro = (item) => {
+    const litros = item.litros || 0;
+    return litros > 0 ? (item.kmRodados || 0) / litros : 0;
+  };
 
-  const markupFactor = 1.28;
-  const expenseRate = 0.18;
+  const computeCustoPorKm = (item) => {
+    const km = item.kmRodados || 0;
+    return km > 0 ? (item.valor || 0) / km : 0;
+  };
 
-  const grossRevenueCurrent = totalCostCurrent * markupFactor;
-  const grossRevenuePrevious = totalCostPrevious * markupFactor;
-
-  const costsCurrent = totalCostCurrent;
-  const costsPrevious = totalCostPrevious;
-
-  const expensesCurrent = grossRevenueCurrent * expenseRate;
-  const expensesPrevious = grossRevenuePrevious * expenseRate;
-
-  const grossProfitCurrent = grossRevenueCurrent - costsCurrent;
-  const grossProfitPrevious = grossRevenuePrevious - costsPrevious;
-
-  const netProfitCurrent = grossProfitCurrent - expensesCurrent;
-  const netProfitPrevious = grossProfitPrevious - expensesPrevious;
-
-  const netMarginCurrent = grossRevenueCurrent ? (netProfitCurrent / grossRevenueCurrent) * 100 : 0;
-  const netMarginPrevious = grossRevenuePrevious ? (netProfitPrevious / grossRevenuePrevious) * 100 : 0;
+  const values = {
+    totalLitros: {
+      current: sumBy(currentSlice, item => item.litros || 0),
+      previous: sumBy(previousSlice, item => item.litros || 0),
+    },
+    totalValor: {
+      current: sumBy(currentSlice, item => item.valor || 0),
+      previous: sumBy(previousSlice, item => item.valor || 0),
+    },
+    ticketMedio: {
+      current: averageBy(currentSlice, item => item.valor || 0),
+      previous: averageBy(previousSlice, item => item.valor || 0),
+    },
+    avgKmLitro: {
+      current: averageBy(currentSlice, computeKmLitro),
+      previous: averageBy(previousSlice, computeKmLitro),
+    },
+    avgCustoPorKm: {
+      current: averageBy(currentSlice, computeCustoPorKm),
+      previous: averageBy(previousSlice, computeCustoPorKm),
+    },
+    totalTransacoes: {
+      current: currentSlice.length,
+      previous: previousSlice.length,
+    },
+  };
 
   const calcChange = (current, previous) => {
     if (!Number.isFinite(previous) || previous === 0) {
@@ -396,14 +413,15 @@ const computeFinancialHighlights = (collection = []) => {
     return ((current - previous) / Math.abs(previous)) * 100;
   };
 
-  return {
-    grossRevenue: { current: grossRevenueCurrent, change: calcChange(grossRevenueCurrent, grossRevenuePrevious) },
-    costs: { current: costsCurrent, change: calcChange(costsCurrent, costsPrevious) },
-    expenses: { current: expensesCurrent, change: calcChange(expensesCurrent, expensesPrevious) },
-    grossProfit: { current: grossProfitCurrent, change: calcChange(grossProfitCurrent, grossProfitPrevious) },
-    netProfit: { current: netProfitCurrent, change: calcChange(netProfitCurrent, netProfitPrevious) },
-    netMargin: { current: netMarginCurrent, change: calcChange(netMarginCurrent, netMarginPrevious) }
-  };
+  return Object.fromEntries(
+    Object.entries(values).map(([key, { current, previous }]) => [
+      key,
+      {
+        current,
+        change: calcChange(current, previous),
+      },
+    ]),
+  );
 };
 
 const computeGroupSummary = (collection = [], key) => {
@@ -648,64 +666,64 @@ const Dashboard = () => {
     });
   };
 
-  const financialHighlights = useMemo(() => computeFinancialHighlights(filteredData), [filteredData]);
+  const metricTrends = useMemo(() => computeMetricTrends(filteredData), [filteredData]);
 
   const indicatorCards = useMemo(() => [
     {
-      id: 'grossRevenue',
-      title: 'Receita Bruta',
-      value: financialHighlights.grossRevenue.current,
-      change: financialHighlights.grossRevenue.change,
-      format: 'currency',
+      id: 'totalLitros',
+      title: 'Total de Litros',
+      value: metricTrends.totalLitros.current,
+      change: metricTrends.totalLitros.change,
+      format: 'liters',
       theme: 'emerald',
+      icon: Fuel
+    },
+    {
+      id: 'totalValor',
+      title: 'Valor Total',
+      value: metricTrends.totalValor.current,
+      change: metricTrends.totalValor.change,
+      format: 'currency',
+      theme: 'rose',
       icon: DollarSign
     },
     {
-      id: 'costs',
-      title: 'Custos',
-      value: financialHighlights.costs.current,
-      change: financialHighlights.costs.change,
-      format: 'currency',
-      theme: 'rose',
-      icon: Wallet
-    },
-    {
-      id: 'expenses',
-      title: 'Despesas',
-      value: financialHighlights.expenses.current,
-      change: financialHighlights.expenses.change,
+      id: 'ticketMedio',
+      title: 'Ticket Médio',
+      value: metricTrends.ticketMedio.current,
+      change: metricTrends.ticketMedio.change,
       format: 'currency',
       theme: 'amber',
-      icon: PiggyBank
-    },
-    {
-      id: 'grossProfit',
-      title: 'Lucro Bruto',
-      value: financialHighlights.grossProfit.current,
-      change: financialHighlights.grossProfit.change,
-      format: 'currency',
-      theme: 'emerald',
       icon: BarChart3
     },
     {
-      id: 'netProfit',
-      title: 'Lucro Líquido',
-      value: financialHighlights.netProfit.current,
-      change: financialHighlights.netProfit.change,
-      format: 'currency',
+      id: 'avgKmLitro',
+      title: 'Média km/L',
+      value: metricTrends.avgKmLitro.current,
+      change: metricTrends.avgKmLitro.change,
+      format: 'kmPerLiter',
       theme: 'emerald',
-      icon: LineChart
+      icon: TrendingUp
     },
     {
-      id: 'netMargin',
-      title: 'Margem Líquida',
-      value: financialHighlights.netMargin.current,
-      change: financialHighlights.netMargin.change,
-      format: 'percentage',
+      id: 'avgCustoPorKm',
+      title: 'Custo por km',
+      value: metricTrends.avgCustoPorKm.current,
+      change: metricTrends.avgCustoPorKm.change,
+      format: 'currency',
+      theme: 'rose',
+      icon: CalendarDays
+    },
+    {
+      id: 'totalTransacoes',
+      title: 'Transações',
+      value: metricTrends.totalTransacoes.current,
+      change: metricTrends.totalTransacoes.change,
+      format: 'integer',
       theme: 'blue',
-      icon: BadgePercent
+      icon: Activity
     }
-  ], [financialHighlights]);
+  ], [metricTrends]);
 
   const sectorSummary = useMemo(() => computeGroupSummary(filteredData, 'setor'), [filteredData]);
   const regionSummary = useMemo(() => computeGroupSummary(filteredData, 'regiao'), [filteredData]);
@@ -834,114 +852,72 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Linha 1: KPIs - col-span-2 cada */}
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
-        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Total de Litros</p>
-              <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatLiters(metrics.totalLitros)}</p>
-            </div>
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-blue-500 flex items-center justify-center shadow-lg ml-2">
-              <Fuel className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          <div className={`flex items-center justify-between pt-3 mt-auto border-t ${borderClasses}`}>
-            <span className="text-sm font-semibold text-emerald-400">↗ 12.5%</span>
-            <span className={`text-xs ${helperClasses}`}>vs mês anterior</span>
-          </div>
+      {/* Indicadores Gerais */}
+      <div className="col-span-12">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {indicatorCards.map((card) => {
+            const theme = indicatorThemes[card.theme] || indicatorThemes.emerald;
+            let valueDisplay = '';
+            switch (card.format) {
+              case 'currency':
+                valueDisplay = formatCurrency(card.value);
+                break;
+              case 'percentage':
+                valueDisplay = formatPercentage(card.value);
+                break;
+              case 'liters':
+                valueDisplay = formatLiters(card.value);
+                break;
+              case 'kmPerLiter':
+                valueDisplay = formatKmPerLiter(card.value);
+                break;
+              case 'integer':
+                valueDisplay = formatInteger(card.value);
+                break;
+              default:
+                valueDisplay = String(card.value ?? '—');
+                break;
+            }
+            const changeValue = Number(card.change || 0);
+            const isPositive = changeValue > 0;
+            const isNegative = changeValue < 0;
+            const changeClass = isPositive
+              ? 'text-emerald-400'
+              : isNegative
+              ? 'text-rose-400'
+              : 'text-slate-400';
+            const ChangeIcon = isPositive ? ArrowUpRight : isNegative ? ArrowDownRight : ArrowUpRight;
+            const formattedChange = formatPercentage(Math.abs(changeValue));
+
+            return (
+              <div
+                key={card.id}
+                className={`relative flex h-full min-h-[170px] flex-col justify-between rounded-3xl border ${theme.border} bg-slate-900/90 px-6 py-6 shadow-lg shadow-slate-900/40`}
+              >
+                <div className="flex items-start justify-between">
+                  <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.title}`}>{card.title}</p>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${theme.icon}`}>
+                    <card.icon className="h-6 w-6" />
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <p className={`text-3xl font-extrabold ${theme.value}`}>{valueDisplay}</p>
+                </div>
+
+                <div className="mt-6 flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 text-sm font-semibold ${changeClass}`}>
+                    <ChangeIcon className="h-4 w-4" />
+                    {formattedChange}
+                  </span>
+                  <span className="text-xs text-slate-500">vs período anterior</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
-        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Valor Total</p>
-              <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatCurrency(metrics.totalValor)}</p>
-            </div>
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-green-500 flex items-center justify-center shadow-lg ml-2">
-              <DollarSign className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          <div className={`flex items-center justify-between pt-3 mt-auto border-t ${borderClasses}`}>
-            <span className="text-sm font-semibold text-emerald-400">↗ 8.3%</span>
-            <span className={`text-xs ${helperClasses}`}>vs mês anterior</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
-        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Ticket Médio</p>
-              <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatCurrency(metrics.ticketMedio)}</p>
-            </div>
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-purple-500 flex items-center justify-center shadow-lg ml-2">
-              <BarChart3 className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          <div className={`flex items-center justify-between pt-3 mt-auto border-t ${borderClasses}`}>
-            <span className="text-sm font-semibold text-red-400">↘ 3.7%</span>
-            <span className={`text-xs ${helperClasses}`}>vs mês anterior</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
-        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Média KM/L</p>
-              <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatKmPerLiter(metrics.avgKmLitro)}</p>
-            </div>
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg ml-2">
-              <TrendingUp className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          <div className={`flex items-center justify-between pt-3 mt-auto border-t ${borderClasses}`}>
-            <span className="text-sm font-semibold text-emerald-400">↗ 2.1%</span>
-            <span className={`text-xs ${helperClasses}`}>vs mês anterior</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
-        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Custo por KM</p>
-              <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{formatCurrency(metrics.avgCustoPorKm)}</p>
-            </div>
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-red-500 flex items-center justify-center shadow-lg ml-2">
-              <CalendarDays className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          <div className={`flex items-center justify-between pt-3 mt-auto border-t ${borderClasses}`}>
-            <span className="text-sm font-semibold text-red-400">↘ 1.2%</span>
-            <span className={`text-xs ${helperClasses}`}>vs mês anterior</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-span-12 sm:col-span-12 md:col-span-6 lg:col-span-2 flex">
-        <div className={`${cardClasses} flex flex-col justify-between h-full w-full`}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <p className={`text-xs uppercase tracking-wider ${titleClasses} mb-2 line-clamp-1`}>Transações</p>
-              <p className={`text-2xl font-bold ${valueClasses} leading-tight`}>{metrics.totalTransacoes}</p>
-            </div>
-            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg ml-2">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          <div className={`flex items-center justify-between pt-3 mt-auto border-t ${borderClasses}`}>
-            <span className="text-sm font-semibold text-emerald-400">↗ 15.8%</span>
-            <span className={`text-xs ${helperClasses}`}>vs mês anterior</span>
-          </div>
-        </div>
-      </div>
 
       {/* Linha 2: Histórico (col-span-7) + Importar (col-span-5) */}
       {userProfile?.role === 'admin' && (

@@ -1,4 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
 
@@ -10,117 +18,85 @@ export const useAuth = () => {
   return context;
 };
 
-// Mock users for testing - TEMPORARY SOLUTION
-const MOCK_USERS = [
-  {
-    email: 'admin@teste.com',
-    password: 'admin123',
-    uid: 'admin-uid-123',
-    profile: {
-      nome: 'Administrador',
-      email: 'admin@teste.com',
-      setor: 'TI',
-      empresa: 'Teste Corp',
-      role: 'admin',
-      createdAt: new Date().toISOString(),
-      isActive: true
-    }
-  },
-  {
-    email: 'user@teste.com',
-    password: 'user123',
-    uid: 'user-uid-456',
-    profile: {
-      nome: 'Usuário Comum',
-      email: 'user@teste.com',
-      setor: 'Operacional',
-      empresa: 'Teste Corp',
-      role: 'user',
-      createdAt: new Date().toISOString(),
-      isActive: true
-    }
-  }
-];
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock login function
+  // Firebase login function
   const login = async (email, password) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-        if (mockUser) {
-          const userCredential = {
-            user: {
-              uid: mockUser.uid,
-              email: mockUser.email,
-              emailVerified: true
-            }
-          };
+      // Buscar o perfil do usuário no Firestore
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
 
-          // Simulate successful login
-          setUser(userCredential.user);
-          setUserProfile(mockUser.profile);
+      if (userDoc.exists()) {
+        setUserProfile(userDoc.data());
+      } else {
+        throw new Error('Perfil de usuário não encontrado');
+      }
 
-          // Save to localStorage for persistence
-          localStorage.setItem('mockUser', JSON.stringify(userCredential.user));
-          localStorage.setItem('mockUserProfile', JSON.stringify(mockUser.profile));
-
-          resolve(userCredential);
-        } else {
-          reject(new Error('Credenciais inválidas'));
-        }
-      }, 1000); // Simulate network delay
-    });
+      return userCredential;
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      throw error;
+    }
   };
 
-  const logout = () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setUser(null);
-        setUserProfile(null);
-        localStorage.removeItem('mockUser');
-        localStorage.removeItem('mockUserProfile');
-        resolve();
-      }, 500);
-    });
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setUserProfile(null);
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      throw error;
+    }
   };
 
   const createUser = async (email, password, userData) => {
-    // Mock user creation - in real app this would create in Firebase
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newUser = {
-          uid: `mock-${Date.now()}`,
-          email,
-          emailVerified: true
-        };
-        resolve({ user: newUser });
-      }, 1000);
-    });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Criar perfil do usuário no Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        ...userData,
+        email,
+        createdAt: new Date().toISOString(),
+        isActive: true
+      });
+
+      return userCredential;
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      throw error;
+    }
   };
 
-  // Check for existing session on mount
+  // Monitor de autenticação do Firebase
   useEffect(() => {
-    const savedUser = localStorage.getItem('mockUser');
-    const savedProfile = localStorage.getItem('mockUserProfile');
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
 
-    if (savedUser && savedProfile) {
-      try {
-        setUser(JSON.parse(savedUser));
-        setUserProfile(JSON.parse(savedProfile));
-      } catch (error) {
-        console.error('Erro ao recuperar sessão:', error);
-        localStorage.removeItem('mockUser');
-        localStorage.removeItem('mockUserProfile');
+      if (currentUser) {
+        // Buscar perfil do usuário
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists()) {
+            setUserProfile(userDoc.data());
+          }
+        } catch (error) {
+          console.error('Erro ao buscar perfil do usuário:', error);
+        }
+      } else {
+        setUserProfile(null);
       }
-    }
 
-    setLoading(false);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const value = {
